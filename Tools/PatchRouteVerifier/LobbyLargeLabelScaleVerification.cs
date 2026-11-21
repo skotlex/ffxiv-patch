@@ -71,6 +71,7 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                     VerifyLobbyLargeLabelRatio(testCase, "source-width", korean.MeanHangulWidth, reference.MeanHangulWidth, expectation.SourceMinRatio, expectation.SourceMaxRatio);
                     VerifyLobbyLargeLabelRatio(testCase, "source-advance", korean.MeanHangulAdvance, reference.MeanHangulAdvance, expectation.AdvanceMinRatio, expectation.SourceMaxRatio);
                     VerifyLobbyLargeLabelFontPixelHeight(testCase, korean, expectation);
+                    VerifyLobbyLargeLabelDigitBaseline(testCase, korean);
                 }
                 else
                 {
@@ -134,6 +135,40 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 }
 
                 return new LobbyLargeLabelScaleExpectation(1.04d, 1.16d, 1.02d, 17.0d, 24.0d, 0.82d, 1.80d);
+            }
+
+            // 캐릭터 선택 큰 라벨('레벨 100', '1월 1일')은 한글과 원본 숫자가 한 줄에 섞인다.
+            // 한글 원본(AXIS_18_lobby)의 offsetY 를 그대로 쓰면 한글이 14px 위로 떠 보였다(2026-11-21 사용자 화면).
+            private void VerifyLobbyLargeLabelDigitBaseline(LobbyLargeLabelScaleCase testCase, PhraseVisualBounds korean)
+            {
+                string normalized = (testCase.FontPath ?? string.Empty).Replace('\\', '/');
+                if (!string.Equals(normalized, "common/font/TrumpGothic_34_lobby.fdt", StringComparison.OrdinalIgnoreCase) ||
+                    korean.MeanDigitHeight <= 0d ||
+                    korean.MeanHangulHeight <= 0d)
+                {
+                    return;
+                }
+
+                double gap = korean.MeanDigitBottom - korean.MeanHangulBottom;
+                if (Math.Abs(gap) > 2.0d)
+                {
+                    Fail(
+                        "{0} lobby large-label [{1}] Hangul bottom {2} and digit bottom {3} differ by {4}px (max 2): korean=[{5}]",
+                        testCase.FontPath,
+                        testCase.Id,
+                        FormatDouble(korean.MeanHangulBottom),
+                        FormatDouble(korean.MeanDigitBottom),
+                        FormatDouble(gap),
+                        Escape(testCase.KoreanPhrase));
+                    return;
+                }
+
+                Pass(
+                    "{0} lobby large-label [{1}] Hangul/digit bottoms aligned: {2} / {3}",
+                    testCase.FontPath,
+                    testCase.Id,
+                    FormatDouble(korean.MeanHangulBottom),
+                    FormatDouble(korean.MeanDigitBottom));
             }
 
             private void VerifyLobbyLargeLabelFontPixelHeight(

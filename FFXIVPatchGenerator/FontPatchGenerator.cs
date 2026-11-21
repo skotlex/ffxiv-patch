@@ -192,7 +192,8 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             // 예전 원본(TrumpGothic_34.fdt 한글 x0.80)은 약 28px 로, 같은 창의 현재 위치 줄(AXIS_18_lobby,
             // 18px)보다 1.5배 컸다(2026-11-21 사용자 화면). 한국 클라이언트는 이 글꼴에 한글이 없고
             // KrnAXIS 로 대체해 그리므로, 현재 위치 줄과 같은 AXIS_18_lobby 한글을 1.0 배로 쓴다.
-            new LobbyLargeLabelVisualScaleSpec("common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", 1.0d, 1.0d)
+            // 줄 높이가 AXIS_18_lobby 보다 커서, 아랫선을 이 글꼴의 숫자에 맞춘다('레벨 100', '1월 1일').
+            new LobbyLargeLabelVisualScaleSpec("common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", 1.0d, 1.0d, true)
         };
 
         private static readonly string[] LobbyLargeLabelCleanReferencePhrases = new string[]
@@ -2430,6 +2431,7 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             Dictionary<uint, byte[]> highScaleFallbackSourceEntries = null;
             HashSet<uint> visualScaleSet = CreateCodepointSet(visualScaleCodepoints);
             double visualScale = 0d;
+            int baselineShift = 0;
             if (hasVisualScaleSpec)
             {
                 double targetReferenceHeight = 0d;
@@ -2462,12 +2464,13 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                     }
                 }
 
-                double sourceHangulHeight = MeasureVisibleMetricsFromTtmpPayloads(
+                FontVisibleMetrics sourceHangul = MeasureVisibleMetricsFromTtmpPayloads(
                     visualSourceFdt,
                     visualSourceFdtPath,
                     visualScaleCodepoints == null || visualScaleCodepoints.Length == 0 ? requiredCodepoints : visualScaleCodepoints,
                     payloadsByPath,
-                    mpdStream).MeanHeight;
+                    mpdStream);
+                double sourceHangulHeight = sourceHangul.MeanHeight;
                 if (targetReferenceHeight > 0d && sourceHangulHeight > 0d)
                 {
                     visualScale = (targetReferenceHeight * visualScaleSpec.HangulToReferenceRatio) / sourceHangulHeight;
@@ -2476,6 +2479,36 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                 if (visualScale < visualScaleSpec.MinimumScale)
                 {
                     visualScale = visualScaleSpec.MinimumScale;
+                }
+
+                if (visualScaleSpec.AlignBottomToTargetDigits)
+                {
+                    byte[] cleanTargetFdt = TryReadArchiveStandardFile(globalArchive, visualScaleSpec.TargetFontPath);
+                    FontVisibleMetrics targetDigits = MeasureVisibleMetricsFromArchive(
+                        cleanTargetFdt,
+                        visualScaleSpec.TargetFontPath,
+                        ActionDetailNumericCodepoints,
+                        globalArchive,
+                        targetTextures,
+                        false);
+                    if (targetDigits.MeanHeight > 0d && sourceHangul.MeanHeight > 0d)
+                    {
+                        baselineShift = ClampInt(
+                            (int)Math.Round(targetDigits.MeanBottom - sourceHangul.MeanBottom * visualScale),
+                            sbyte.MinValue,
+                            sbyte.MaxValue);
+                        Console.WriteLine(
+                            "  Lobby large-label Hangul baseline shift: {0} (digit bottom {1:0.0}, Hangul bottom {2:0.0}, scale {3:0.000}) ({4})",
+                            baselineShift,
+                            targetDigits.MeanBottom,
+                            sourceHangul.MeanBottom,
+                            visualScale,
+                            normalizedPath);
+                    }
+                    else
+                    {
+                        AddLimitedWarning("Lobby large-label Hangul baseline could not be measured; source offsets kept: " + normalizedPath);
+                    }
                 }
             }
 
@@ -2587,6 +2620,11 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                 bool applyVisualScale = inVisualScaleSet &&
                     visualScale > 0d &&
                     Math.Abs(visualScale - 1d) > 0.001d;
+                bool applyBaselineShift = inVisualScaleSet && baselineShift != 0;
+                if (applyBaselineShift)
+                {
+                    replacementOffsetY = ClampInt(sourceEntry.OffsetY + baselineShift, sbyte.MinValue, sbyte.MaxValue);
+                }
                 if (applyVisualScale)
                 {
                     replacementWidth = ClampInt(
@@ -2776,7 +2814,7 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                 Endian.WriteUInt16LE(replacementEntry, 6, checked((ushort)allocation.Cell.ImageIndex));
                 Endian.WriteUInt16LE(replacementEntry, 8, checked((ushort)(allocation.Cell.X + allocation.LeftPadding)));
                 Endian.WriteUInt16LE(replacementEntry, 10, checked((ushort)(allocation.Cell.Y + allocation.TopPadding)));
-                if (applyVisualScale)
+                if (applyVisualScale || applyBaselineShift)
                 {
                     replacementEntry[12] = checked((byte)replacementWidth);
                     replacementEntry[13] = checked((byte)replacementHeight);
@@ -2974,6 +3012,17 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             Dictionary<string, byte[]> textures,
             bool referenceCjkOnly)
         {
+            return MeasureVisibleMetricsFromArchive(fdt, fdtPath, codepoints, archive, textures, referenceCjkOnly).MeanHeight;
+        }
+
+        private static FontVisibleMetrics MeasureVisibleMetricsFromArchive(
+            byte[] fdt,
+            string fdtPath,
+            uint[] codepoints,
+            SqPackArchive archive,
+            Dictionary<string, byte[]> textures,
+            bool referenceCjkOnly)
+        {
             if (fdt == null ||
                 string.IsNullOrWhiteSpace(fdtPath) ||
                 codepoints == null ||
@@ -2981,7 +3030,7 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                 archive == null ||
                 textures == null)
             {
-                return 0d;
+                return default(FontVisibleMetrics);
             }
 
             int fontTableOffset;
@@ -2989,10 +3038,11 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             int glyphStart;
             if (!TryGetFdtGlyphTable(fdt, out fontTableOffset, out glyphCount, out glyphStart))
             {
-                return 0d;
+                return default(FontVisibleMetrics);
             }
 
             double total = 0d;
+            double bottomTotal = 0d;
             int measured = 0;
             for (int i = 0; i < codepoints.Length; i++)
             {
@@ -3053,10 +3103,13 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                 }
 
                 total += maxY - minY + 1;
+                bottomTotal += glyph.OffsetY + maxY + 1;
                 measured++;
             }
 
-            return measured > 0 ? total / measured : 0d;
+            return measured > 0
+                ? new FontVisibleMetrics(total / measured, bottomTotal / measured)
+                : default(FontVisibleMetrics);
         }
 
         private static bool IsMeasurableFontMetricCodepoint(uint codepoint)
@@ -9845,6 +9898,9 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             public readonly double HangulToReferenceRatio;
             public readonly double MinimumScale;
             public readonly bool UsePlacementCells;
+            // 한글 아랫선을 대상 글꼴(clean)의 숫자 아랫선에 맞춘다. 원본 글꼴과 대상 글꼴의 줄 높이가
+            // 다르면 원본 offsetY 그대로는 한글이 줄 위쪽에 떠서 숫자와 기준선이 어긋난다.
+            public readonly bool AlignBottomToTargetDigits;
 
             public LobbyLargeLabelVisualScaleSpec(string targetFontPath, string sourceFontPath, double hangulToReferenceRatio)
                 : this(targetFontPath, sourceFontPath, null, hangulToReferenceRatio, 1d)
@@ -9859,6 +9915,12 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             public LobbyLargeLabelVisualScaleSpec(string targetFontPath, string sourceFontPath, string placementFontPath, double hangulToReferenceRatio)
                 : this(targetFontPath, sourceFontPath, placementFontPath, hangulToReferenceRatio, 1d)
             {
+            }
+
+            public LobbyLargeLabelVisualScaleSpec(string targetFontPath, string sourceFontPath, double hangulToReferenceRatio, double minimumScale, bool alignBottomToTargetDigits)
+                : this(targetFontPath, sourceFontPath, null, hangulToReferenceRatio, minimumScale)
+            {
+                AlignBottomToTargetDigits = alignBottomToTargetDigits;
             }
 
             public LobbyLargeLabelVisualScaleSpec(string targetFontPath, string sourceFontPath, string placementFontPath, double hangulToReferenceRatio, double minimumScale)
