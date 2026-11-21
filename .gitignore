@@ -32,3 +32,8 @@ release-en*/
 # Local machine noise
 Thumbs.db
 Desktop.ini
+
+# 로컬 작업 지침·메모
+/CLAUDE.md
+/AGENTS.md
+/FORK_NOTES.md
