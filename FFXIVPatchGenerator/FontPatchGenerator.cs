@@ -5779,6 +5779,7 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             {
                 using (SqPackArchive textArchive = new SqPackArchive(textIndexPath, koreaSqpack, TextDatPrefix))
                 {
+                    ranges = ResolveLobbyCoverageReferences(ranges, textArchive);
                     Dictionary<string, List<LobbyHangulCoverageRowSpec>> rangesBySheet =
                         new Dictionary<string, List<LobbyHangulCoverageRowSpec>>(StringComparer.OrdinalIgnoreCase);
                     for (int i = 0; i < ranges.Length; i++)
@@ -6333,6 +6334,20 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             }
 
             return false;
+        }
+
+        private LobbyHangulCoverageRowSpec[] ResolveLobbyCoverageReferences(
+            LobbyHangulCoverageRowSpec[] ranges,
+            SqPackArchive archive)
+        {
+            List<string> warnings = new List<string>();
+            LobbyHangulCoverageRowSpec[] resolved = LobbyHangulCoverage.ResolveReferences(ranges, archive.ReadFile, warnings);
+            for (int i = 0; i < warnings.Count; i++)
+            {
+                AddLimitedWarning(warnings[i]);
+            }
+
+            return resolved;
         }
 
         private static bool LobbyPageOverlaps(ExcelPageDefinition page, List<LobbyHangulCoverageRowSpec> ranges)

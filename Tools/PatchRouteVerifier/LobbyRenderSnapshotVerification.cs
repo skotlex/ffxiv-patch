@@ -17,6 +17,9 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
             private const double LowScaleSimilarityFailThreshold = 0.035;
             private static readonly string SettingsChangedPhrase = LobbyScaledHangulPhrases.StartScreenSystemSettingsResultMessages[0];
             private static readonly string HighResolutionFhdPhrase = LobbyScaledHangulPhrases.HighResolutionUiScaleOptions[2];
+            // 캐릭터 선택 정보 창(CharaSelect_Info.uld, AXIS_18_lobby 노드)의 현재 위치.
+            // "갯"은 로비 7개 시트에 없고 PlaceName 에만 있다.
+            private const string CharacterLocationPhrase = "안갯빛 마을";
 
             private static readonly LobbyRenderCase[] LobbyRenderCases = new LobbyRenderCase[]
             {
@@ -28,6 +31,8 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 new LobbyRenderCase("settings-axis14-fhd", "common/font/AXIS_14_lobby.fdt", HighResolutionFhdPhrase, 1.0),
                 new LobbyRenderCase("settings-axis18-result", "common/font/AXIS_18_lobby.fdt", SettingsChangedPhrase, 1.0),
                 new LobbyRenderCase("settings-axis36-result", "common/font/AXIS_36_lobby.fdt", SettingsChangedPhrase, 1.0),
+                new LobbyRenderCase("chara-location-axis18", "common/font/AXIS_18_lobby.fdt", CharacterLocationPhrase, 1.0),
+                new LobbyRenderCase("chara-location-axis36", "common/font/AXIS_36_lobby.fdt", CharacterLocationPhrase, 1.0),
                 new LobbyRenderCase("settings-global-axis18-result", "common/font/AXIS_18.fdt", SettingsChangedPhrase, 1.0, true),
                 new LobbyRenderCase("settings-global-axis36-result", "common/font/AXIS_36.fdt", SettingsChangedPhrase, 1.0, true),
                 new LobbyRenderCase("settings-global-krnaxis180-result", "common/font/KrnAXIS_180.fdt", SettingsChangedPhrase, 1.0, true),
