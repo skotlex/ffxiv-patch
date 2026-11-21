@@ -51,6 +51,7 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 new InGameUldCandidate("free-company", "ui/uld/FreeCompany.uld"),
                 new InGameUldCandidate("free-company-profile", "ui/uld/FreeCompanyProfile.uld"),
                 new InGameUldCandidate("free-company-members", "ui/uld/FreeCompanyMember.uld"),
+                new InGameUldCandidate("linkshell", "ui/uld/LinkShell.uld"),
                 new InGameUldCandidate("alliance-list", "ui/uld/AllianceList.uld", true),
                 new InGameUldCandidate("enemy-list", "ui/uld/EnemyList.uld"),
                 new InGameUldCandidate("name-plate", "ui/uld/NamePlate.uld"),

@@ -154,7 +154,10 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
             private void VerifyPvpNumericScale(string fontPath, PvpProfileRoutePhrase phrase, PhraseVisualBounds korean, PhraseVisualBounds numeric, bool failOnOutOfRange)
             {
                 double ratio = SafeRatio(korean.MeanHangulHeight, numeric.MeanDigitHeight);
-                if (ratio < PvpNumericMinRatio || ratio > PvpNumericMaxRatio)
+                double minRatio;
+                double maxRatio;
+                SelectHangulToDigitRatioWindow(fontPath, PvpNumericMinRatio, PvpNumericMaxRatio, out minRatio, out maxRatio);
+                if (ratio < minRatio || ratio > maxRatio)
                 {
                     string message = string.Format(
                         System.Globalization.CultureInfo.InvariantCulture,
@@ -162,8 +165,8 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                         fontPath,
                         Escape(phrase.Korean),
                         FormatRatio(ratio),
-                        FormatRatio(PvpNumericMinRatio),
-                        FormatRatio(PvpNumericMaxRatio),
+                        FormatRatio(minRatio),
+                        FormatRatio(maxRatio),
                         FormatDouble(korean.MeanHangulHeight),
                         FormatDouble(numeric.MeanDigitHeight),
                         FormatPhraseBounds(korean));

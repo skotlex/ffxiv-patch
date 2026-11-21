@@ -324,17 +324,20 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                         continue;
                     }
 
-                    double bottomGap = Math.Abs(bounds.MeanHangulBottom - numeric.MeanDigitBottom);
+                    // 한글이 숫자보다 작아 생성기는 숫자 높이의 가운데에 한글 가운데를 맞춘다.
+                    double hangulCenter = bounds.MeanHangulTop + bounds.MeanHangulHeight / 2d;
+                    double digitCenter = numeric.MeanDigitTop + numeric.MeanDigitHeight / 2d;
+                    double centerGap = Math.Abs(hangulCenter - digitCenter);
                     double topOverhang = numeric.MeanDigitTop - bounds.MeanHangulTop;
-                    if (bottomGap > tolerance || topOverhang > tolerance)
+                    if (centerGap > tolerance || topOverhang > tolerance)
                     {
-                        Fail("{0} [{1}] Hangul baseline mismatch: bottom gap={2}, top overhang={3}, tolerance={4}",
-                            fontPath, Escape(phrase), FormatDouble(bottomGap), FormatDouble(topOverhang), FormatDouble(tolerance));
+                        Fail("{0} [{1}] Hangul vertical center mismatch: center gap={2}, top overhang={3}, tolerance={4}",
+                            fontPath, Escape(phrase), FormatDouble(centerGap), FormatDouble(topOverhang), FormatDouble(tolerance));
                     }
                     else
                     {
-                        Pass("{0} [{1}] Hangul and Latin baselines align: bottom gap={2}, top overhang={3}",
-                            fontPath, Escape(phrase), FormatDouble(bottomGap), FormatDouble(topOverhang));
+                        Pass("{0} [{1}] Hangul and Latin vertical centers align: center gap={2}, top overhang={3}",
+                            fontPath, Escape(phrase), FormatDouble(centerGap), FormatDouble(topOverhang));
                     }
                 }
             }
@@ -357,8 +360,14 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
             {
                 double ratio = SafeRatio(target.MeanHangulHeight, numeric.MeanDigitHeight);
                 bool strict = ActionDetailHighScaleHangulGlyphs.IsVisualScaleTargetFontPath(fontPath);
-                double minimum = strict ? VisualScalePhraseMinRatio : 0.72d;
-                double maximum = strict ? VisualScalePhraseMaxRatio : 1.28d;
+                double minimum;
+                double maximum;
+                SelectHangulToDigitRatioWindow(
+                    fontPath,
+                    strict ? VisualScalePhraseMinRatio : 0.72d,
+                    strict ? VisualScalePhraseMaxRatio : 1.28d,
+                    out minimum,
+                    out maximum);
                 if (ratio < minimum || ratio > maximum)
                 {
                     Fail(

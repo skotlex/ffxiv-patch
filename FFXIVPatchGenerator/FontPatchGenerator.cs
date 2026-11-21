@@ -178,12 +178,10 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             new DerivedLobbyFontSpec("common/font/TrumpGothic_68_lobby.fdt", "common/font/AXIS_36.fdt")
         };
 
-        private static readonly LargeUiLabelVisualScaleSpec[] LargeUiLabelVisualScaleFonts = new LargeUiLabelVisualScaleSpec[]
-        {
-            new LargeUiLabelVisualScaleSpec("common/font/TrumpGothic_23.fdt", "common/font/TrumpGothic_23.fdt", "common/font/TrumpGothic_23.fdt"),
-            new LargeUiLabelVisualScaleSpec("common/font/TrumpGothic_34.fdt", "common/font/TrumpGothic_34.fdt", "common/font/TrumpGothic_34.fdt"),
-            new LargeUiLabelVisualScaleSpec("common/font/TrumpGothic_68.fdt", "common/font/TrumpGothic_34.fdt", "common/font/TrumpGothic_68.fdt", 0.985d)
-        };
+        // 축소 보간 경로. 창 제목(TrumpGothic)과 MiedingerMid 에 썼으나 축소한 한글이 번지고 자간이
+        // 들쭉날쭉했다(2026-11-21 사용자 보고). 이제 두 글꼴은 원래 크기 AXIS 셀을 가리키는 공유 경로
+        // (SharedUi100PercentHangulGlyphs)를 쓴다. 비어 있으면 이 경로는 아무것도 바꾸지 않는다.
+        private static readonly LargeUiLabelVisualScaleSpec[] LargeUiLabelVisualScaleFonts = new LargeUiLabelVisualScaleSpec[0];
 
         private static readonly LobbyLargeLabelVisualScaleSpec[] LobbyLargeLabelVisualScaleFonts = new LobbyLargeLabelVisualScaleSpec[]
         {
@@ -1704,7 +1702,12 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
 
             double verticalScale = (targetDigits.MeanHeight * spec.HangulToDigitRatio) / sourceHangul.MeanHeight;
             double horizontalScale = verticalScale * spec.WidthScaleMultiplier;
-            double verticalOrigin = targetDigits.MeanBottom - sourceHangul.MeanBottom * verticalScale;
+            // 한글이 숫자(영문 대문자)보다 작으므로 아랫선이 아니라 가운데를 맞춘다. 아랫선에 맞추면 창 제목
+            // 한글이 제목 막대 아래쪽으로 쏠려 보였다(2026-11-21 사용자 화면, 약 2px).
+            double scaledHangulHeight = sourceHangul.MeanHeight * verticalScale;
+            double verticalOrigin = targetDigits.MeanBottom -
+                (targetDigits.MeanHeight - scaledHangulHeight) / 2d -
+                sourceHangul.MeanBottom * verticalScale;
             List<LargeUiLabelGlyphPatchPlan> plans = new List<LargeUiLabelGlyphPatchPlan>(requiredCodepoints.Length);
             for (int codepointIndex = 0; codepointIndex < requiredCodepoints.Length; codepointIndex++)
             {
@@ -1834,6 +1837,9 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
 
                 int sourceAdvance = Math.Max(1, sourceEntry.Width + sourceEntry.OffsetX);
                 int scaledAdvance = ClampInt((int)Math.Round(sourceAdvance * horizontalScale), 1, byte.MaxValue);
+                // AXIS 한글은 글자 칸이 진행 폭보다 넓어, 줄이면 일부 글자의 잉크가 다음 글자와 맞닿는다
+                // (창 제목 2px 겹침). 진행 폭을 잉크 오른쪽 끝보다 작게 두지 않는다.
+                scaledAdvance = Math.Max(scaledAdvance, Math.Min(byte.MaxValue, storedWidth));
                 int scaledOffsetX = ClampInt(scaledAdvance - storedWidth, sbyte.MinValue, sbyte.MaxValue);
                 // Scale around the source Hangul baseline, then place it on the
                 // target digits' baseline. A source bearing is not a target bearing.
@@ -2219,9 +2225,10 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             }
 
             int baselineShift = 0;
-            if (SharedUi100PercentHangulGlyphs.AlignsBaselineToTargetDigits(normalizedPath))
+            if (SharedUi100PercentHangulGlyphs.MovesVerticallyToTargetDigits(normalizedPath))
             {
-                if (!TryMeasureHangulToDigitBaselineShift(targetFdt, normalizedPath, sourceFdt, sourceFontPath, payloadsByPath, mpdStream, out baselineShift))
+                bool center = SharedUi100PercentHangulGlyphs.CentersOnTargetDigits(normalizedPath);
+                if (!TryMeasureHangulToDigitBaselineShift(targetFdt, normalizedPath, sourceFdt, sourceFontPath, payloadsByPath, mpdStream, center, out baselineShift))
                 {
                     AddLimitedWarning("Shared UI Hangul baseline could not be measured; source offsets kept: " + normalizedPath);
                     baselineShift = 0;
@@ -2338,6 +2345,7 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             string sourceFontPath,
             Dictionary<string, FontPayload> payloadsByPath,
             FileStream mpdStream,
+            bool center,
             out int shift)
         {
             shift = 0;
@@ -2358,7 +2366,10 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                 return false;
             }
 
-            shift = ClampInt((int)Math.Round(targetDigits.MeanBottom - sourceHangul.MeanBottom), sbyte.MinValue, sbyte.MaxValue);
+            double delta = center
+                ? (targetDigits.MeanBottom - targetDigits.MeanHeight / 2d) - (sourceHangul.MeanBottom - sourceHangul.MeanHeight / 2d)
+                : targetDigits.MeanBottom - sourceHangul.MeanBottom;
+            shift = ClampInt((int)Math.Round(delta), sbyte.MinValue, sbyte.MaxValue);
             return true;
         }
 

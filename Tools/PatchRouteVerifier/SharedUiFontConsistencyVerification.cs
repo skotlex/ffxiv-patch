@@ -130,6 +130,7 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 }
 
                 VerifySharedJupiterDigitBaselines();
+                VerifyDigitCenteredHangulFonts();
 
                 int expectedMappedGlyphs;
                 int mappedProbeGlyphs;
@@ -272,7 +273,7 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                     Dictionary<uint, FdtGlyphEntry> targetGlyphs = ReadHangulGlyphEntries(targetFdt);
                     int failuresForFont = 0;
                     // 기준선을 맞추는 경로는 원본 셀·크기를 그대로 쓰고 offsetY 만 글꼴 전체에서 같은 값만큼 옮긴다.
-                    bool alignsBaseline = SharedUi100PercentHangulGlyphs.AlignsBaselineToTargetDigits(fontPath);
+                    bool alignsBaseline = SharedUi100PercentHangulGlyphs.MovesVerticallyToTargetDigits(fontPath);
                     int? baselineShift = null;
                     foreach (KeyValuePair<uint, FdtGlyphEntry> pair in originalTargetGlyphs)
                     {
@@ -446,6 +447,51 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 }
             }
 
+            // 가운데 맞춤 경로(창 제목 TrumpGothic, MiedingerMid): 한글과 숫자의 세로 가운데가 맞아야 한다.
+            // 예: 링크셸 목록 '링크셸1 :', 기술 목록 '레벨 100'. 한글은 원래 크기 AXIS 셀이라 비율은 글꼴마다 다르다.
+            private void VerifyDigitCenteredHangulFonts()
+            {
+                const string phrase = "링크셸 1 : 레벨 100";
+                for (int i = 0; i < SharedJupiterFontPaths.Length; i++)
+                {
+                    string fontPath = SharedJupiterFontPaths[i];
+                    if (!SharedUi100PercentHangulGlyphs.CentersOnTargetDigits(fontPath))
+                    {
+                        continue;
+                    }
+
+                    PhraseVisualBounds bounds;
+                    string error;
+                    if (!TryMeasurePhraseVisualBounds(_patchedFont, fontPath, phrase, true, out bounds, out error))
+                    {
+                        Fail("{0} digit-centered phrase [{1}] layout error: {2}", fontPath, Escape(phrase), error);
+                        continue;
+                    }
+
+                    double ratio = SafeRatio(bounds.MeanHangulHeight, bounds.MeanDigitHeight);
+                    double hangulCenter = bounds.MeanHangulTop + bounds.MeanHangulHeight / 2d;
+                    double digitCenter = bounds.MeanDigitTop + bounds.MeanDigitHeight / 2d;
+                    double centerGap = hangulCenter - digitCenter;
+                    double tolerance = Math.Max(1.0d, bounds.MeanDigitHeight * 0.12d);
+                    if (bounds.MeanDigitHeight <= 0d || ratio < 0.60d || ratio > 1.60d || Math.Abs(centerGap) > tolerance)
+                    {
+                        Fail(
+                            "{0} digit-centered Hangul: Hangul/digit height {1} (0.60..1.60), center gap {2}px (max {3})",
+                            fontPath,
+                            FormatRatio(ratio),
+                            FormatDouble(centerGap),
+                            FormatDouble(tolerance));
+                        continue;
+                    }
+
+                    Pass(
+                        "{0} digit-centered Hangul: Hangul/digit height {1}, center gap {2}px",
+                        fontPath,
+                        FormatRatio(ratio),
+                        FormatDouble(centerGap));
+                }
+            }
+
             private int VerifySharedUiGroupGlyphScale(
                 SharedUiRouteGroup group,
                 HashSet<string> routedFonts,
@@ -591,8 +637,26 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 return true;
             }
 
+            // 가운데 맞춤 경로(창 제목 TrumpGothic, MiedingerMid)는 원래 크기 AXIS 셀을 쓰므로 한글/숫자 비율이
+            // 글꼴마다 다르다(TrumpGothic_23 0.72, MiedingerMid_12 1.31). 위치는 VerifyDigitCenteredHangulFonts 가 본다.
+            private static void SelectHangulToDigitRatioWindow(string fontPath, double defaultMin, double defaultMax, out double min, out double max)
+            {
+                if (SharedUi100PercentHangulGlyphs.CentersOnTargetDigits(fontPath))
+                {
+                    min = 0.60d;
+                    max = 1.60d;
+                    return;
+                }
+
+                min = defaultMin;
+                max = defaultMax;
+            }
+
             private bool VerifySharedUiPhraseVisualSize(string area, string fontPath, string phrase)
             {
+                double minRatio;
+                double maxRatio;
+                SelectHangulToDigitRatioWindow(fontPath, SharedUiMinHangulToDigitRatio, SharedUiMaxHangulToDigitRatio, out minRatio, out maxRatio);
                 PhraseVisualBounds korean;
                 PhraseVisualBounds numeric;
                 string error;
@@ -604,7 +668,7 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 }
 
                 double ratio = SafeRatio(korean.MeanHangulHeight, numeric.MeanDigitHeight);
-                if (ratio < SharedUiMinHangulToDigitRatio || ratio > SharedUiMaxHangulToDigitRatio)
+                if (ratio < minRatio || ratio > maxRatio)
                 {
                     Fail(
                         "{0} {1} phrase [{2}] 100% Hangul/digit ratio {3} outside {4}..{5}: hangul={6}, digit={7}",
@@ -612,8 +676,8 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                         fontPath,
                         Escape(phrase),
                         FormatRatio(ratio),
-                        FormatRatio(SharedUiMinHangulToDigitRatio),
-                        FormatRatio(SharedUiMaxHangulToDigitRatio),
+                        FormatRatio(minRatio),
+                        FormatRatio(maxRatio),
                         FormatDouble(korean.MeanHangulHeight),
                         FormatDouble(numeric.MeanDigitHeight));
                     return false;
