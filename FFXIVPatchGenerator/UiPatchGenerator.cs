@@ -296,79 +296,105 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             return 1;
         }
 
-        private static int PatchPartyBonusRoleFont(
+        private int PatchPartyBonusRoleFont(
             SqPackArchive globalUiArchive,
             SqPackIndexFile mutableIndex,
             SqPackIndex2File mutableIndex2,
             SqPackDatWriter datWriter)
         {
-            byte[] sourceUld = globalUiArchive.ReadFile(PartyBonusRoleFontPatch.UldPath);
-            byte[] patchedUld = PartyBonusRoleFontPatch.Apply(sourceUld);
-            long offset = datWriter.WriteStandardFile(patchedUld);
-            mutableIndex.SetFileOffset(PartyBonusRoleFontPatch.UldPath, PatchDatId, offset);
-            mutableIndex2.SetFileOffset(PartyBonusRoleFontPatch.UldPath, PatchDatId, offset);
-            Console.WriteLine(
-                "UI ULD patched: {0} role font {1}/{2} -> {3}/{4}",
-                PartyBonusRoleFontPatch.UldPath,
-                PartyBonusRoleFontPatch.SourceFontId,
-                PartyBonusRoleFontPatch.SourceFontSize,
-                PartyBonusRoleFontPatch.TargetFontId,
-                PartyBonusRoleFontPatch.TargetFontSize);
-            return 1;
+            return PatchOptionalUldGroup(
+                "Party list role font patch",
+                new string[] { PartyBonusRoleFontPatch.UldPath },
+                delegate(string uldPath, byte[] sourceUld) { return PartyBonusRoleFontPatch.Apply(sourceUld); },
+                string.Format(
+                    "role font {0}/{1} -> {2}/{3}",
+                    PartyBonusRoleFontPatch.SourceFontId,
+                    PartyBonusRoleFontPatch.SourceFontSize,
+                    PartyBonusRoleFontPatch.TargetFontId,
+                    PartyBonusRoleFontPatch.TargetFontSize),
+                globalUiArchive,
+                mutableIndex,
+                mutableIndex2,
+                datWriter);
         }
 
-        private static int PatchDutyFinderRoleFont(
+        private int PatchDutyFinderRoleFont(
             SqPackArchive globalUiArchive,
             SqPackIndexFile mutableIndex,
             SqPackIndex2File mutableIndex2,
             SqPackDatWriter datWriter)
         {
-            int patched = 0;
-            for (int pathIndex = 0; pathIndex < DutyFinderRoleFontPatch.UldPaths.Length; pathIndex++)
-            {
-                string uldPath = DutyFinderRoleFontPatch.UldPaths[pathIndex];
-                byte[] sourceUld = globalUiArchive.ReadFile(uldPath);
-                byte[] patchedUld = DutyFinderRoleFontPatch.Apply(uldPath, sourceUld);
-                long offset = datWriter.WriteStandardFile(patchedUld);
-                mutableIndex.SetFileOffset(uldPath, PatchDatId, offset);
-                mutableIndex2.SetFileOffset(uldPath, PatchDatId, offset);
-                Console.WriteLine(
-                    "UI ULD patched: {0} role-tab fonts {1}/{2} -> {3}/{4}",
-                    uldPath,
+            return PatchOptionalUldGroup(
+                "Duty Finder role-tab font patch",
+                DutyFinderRoleFontPatch.UldPaths,
+                DutyFinderRoleFontPatch.Apply,
+                string.Format(
+                    "role-tab fonts {0}/{1} -> {2}/{3}",
                     DutyFinderRoleFontPatch.SourceFontId,
                     DutyFinderRoleFontPatch.SourceFontSize,
                     DutyFinderRoleFontPatch.TargetFontId,
-                    DutyFinderRoleFontPatch.TargetFontSize);
-                patched++;
-            }
-
-            return patched;
+                    DutyFinderRoleFontPatch.TargetFontSize),
+                globalUiArchive,
+                mutableIndex,
+                mutableIndex2,
+                datWriter);
         }
 
-        private static int PatchInventorySubtitleSpacing(
+        private int PatchInventorySubtitleSpacing(
             SqPackArchive globalUiArchive,
             SqPackIndexFile mutableIndex,
             SqPackIndex2File mutableIndex2,
             SqPackDatWriter datWriter)
         {
-            int patched = 0;
-            for (int pathIndex = 0; pathIndex < InventorySubtitleSpacingPatch.UldPaths.Length; pathIndex++)
-            {
-                string uldPath = InventorySubtitleSpacingPatch.UldPaths[pathIndex];
-                byte[] sourceUld = globalUiArchive.ReadFile(uldPath);
-                byte[] patchedUld = InventorySubtitleSpacingPatch.Apply(uldPath, sourceUld);
-                long offset = datWriter.WriteStandardFile(patchedUld);
-                mutableIndex.SetFileOffset(uldPath, PatchDatId, offset);
-                mutableIndex2.SetFileOffset(uldPath, PatchDatId, offset);
-                Console.WriteLine(
-                    "UI ULD patched: {0} inventory subtitle X {1} -> {2}",
-                    uldPath,
+            return PatchOptionalUldGroup(
+                "Inventory subtitle spacing patch",
+                InventorySubtitleSpacingPatch.UldPaths,
+                InventorySubtitleSpacingPatch.Apply,
+                string.Format(
+                    "inventory subtitle X {0} -> {1}",
                     InventorySubtitleSpacingPatch.SourceX,
-                    InventorySubtitleSpacingPatch.TargetX);
-                patched++;
+                    InventorySubtitleSpacingPatch.TargetX),
+                globalUiArchive,
+                mutableIndex,
+                mutableIndex2,
+                datWriter);
+        }
+
+        // 창 구조가 바뀌어 보정할 수 없으면 묶음 전체를 건너뛰고 경고만 남긴다 (OptionalUldPatch 참고).
+        private int PatchOptionalUldGroup(
+            string patchName,
+            string[] uldPaths,
+            Func<string, byte[], byte[]> apply,
+            string changeDescription,
+            SqPackArchive globalUiArchive,
+            SqPackIndexFile mutableIndex,
+            SqPackIndex2File mutableIndex2,
+            SqPackDatWriter datWriter)
+        {
+            string warning;
+            byte[][] patchedUlds = OptionalUldPatch.TryApplyAll(
+                patchName,
+                uldPaths,
+                globalUiArchive.ReadFile,
+                apply,
+                out warning);
+            if (patchedUlds == null)
+            {
+                Console.WriteLine("UI ULD patch skipped: {0}", warning);
+                _report.Warnings.Add(warning);
+                return 0;
             }
 
-            return patched;
+            for (int pathIndex = 0; pathIndex < uldPaths.Length; pathIndex++)
+            {
+                string uldPath = uldPaths[pathIndex];
+                long offset = datWriter.WriteStandardFile(patchedUlds[pathIndex]);
+                mutableIndex.SetFileOffset(uldPath, PatchDatId, offset);
+                mutableIndex2.SetFileOffset(uldPath, PatchDatId, offset);
+                Console.WriteLine("UI ULD patched: {0} {1}", uldPath, changeDescription);
+            }
+
+            return uldPaths.Length;
         }
 
         private int CopyIconSheetImages(

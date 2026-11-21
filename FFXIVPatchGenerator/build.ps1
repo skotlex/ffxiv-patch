@@ -24,6 +24,7 @@ $sources = @(
     "InventorySubtitleSpacingPatch.cs",
     "LobbyScaledHangulPhrases.cs",
     "LobbyHangulCoverage.cs",
+    "OptionalUldPatch.cs",
     "UiPatchGenerator.cs",
     "SqPack.cs",
     "SqPackIndexCheck.cs",

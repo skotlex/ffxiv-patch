@@ -305,6 +305,7 @@
 - `--base-ui-index`, `--base-ui-index2`로 clean `060000` index/index2 지정
 - `story`, UI 이미지 `원문`, `--font-only`에서는 UI 텍스처 패치 생성 제외
 - `--skip-ui-texture-fix`는 지역화 이미지만 제외. 한국어 Remainder의 PartyMemberList/ContentsFinder/RaidFinder ULD 보정은 유지하며 이 보정만 할 때는 한국 UI/글로벌 EXD 입력을 읽지 않음
+- PartyMemberList, ContentsFinder/RaidFinder, Inventory 계열 ULD 보정은 게임 업데이트로 창 구조가 바뀌어 검증에 실패하면 그 묶음만 글로벌 원본으로 두고 경고를 남긴 채 생성을 계속함. 회귀 테스트: `Scripts\test-optional-uld-patch.ps1`
 
 ### clean index 처리
 

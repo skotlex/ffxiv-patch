@@ -48,6 +48,7 @@
     <Compile Include="InventorySubtitleSpacingPatch.cs" />
     <Compile Include="LobbyScaledHangulPhrases.cs" />
     <Compile Include="LobbyHangulCoverage.cs" />
+    <Compile Include="OptionalUldPatch.cs" />
     <Compile Include="UiPatchGenerator.cs" />
     <Compile Include="SqPack.cs" />
     <Compile Include="SqPackIndexCheck.cs" />

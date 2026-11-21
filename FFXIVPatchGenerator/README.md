@@ -202,8 +202,9 @@ UI 텍스처 패치는 `060000` UI 패키지를 대상으로 하며 새 `060000.
 현재 포함되는 대상:
 
 - `ui/uld/PartyListTargetBase.tex`: 파티 리스트에서 본인을 표시하는 번호/glyph 텍스처 차이를 보정합니다.
-- `ui/uld/PartyMemberList.uld`: 플레이어 간 교류 창의 파티 보너스 역할명 노드만 `TrumpGothic 19`에서 `AXIS 12`로 변경합니다. 컴포넌트/노드 구조, 위치, 크기, 정렬, 간격, 인스턴스 수가 예상값과 모두 일치할 때만 두 폰트 바이트를 수정하며, 구조가 달라지면 생성을 중단합니다.
-- `ui/uld/ContentsFinder.uld`, `ui/uld/RaidFinder.uld`: 일반/고난도 임무 찾기 역할 탭의 `역할` 노드와 동적 `공격 역할`/`방어 역할`/`회복 역할` 노드만 `TrumpGothic 23`에서 `AXIS 12`로 변경합니다. widget/node ID, 위치, 크기, TextId, 정렬, 플래그, 간격이 예상값과 모두 일치할 때만 각 파일의 네 폰트 바이트를 수정하며, 구조가 달라지면 생성을 중단합니다. 같은 탭의 직업명 노드는 원래 `Jupiter 23`과 180x34 영역을 유지합니다.
+- `ui/uld/PartyMemberList.uld`: 플레이어 간 교류 창의 파티 보너스 역할명 노드만 `TrumpGothic 19`에서 `AXIS 12`로 변경합니다. 컴포넌트/노드 구조, 위치, 크기, 정렬, 간격, 인스턴스 수가 예상값과 모두 일치할 때만 두 폰트 바이트를 수정하며, 구조가 달라지면 이 보정만 건너뜁니다(아래 참고).
+- `ui/uld/ContentsFinder.uld`, `ui/uld/RaidFinder.uld`: 일반/고난도 임무 찾기 역할 탭의 `역할` 노드와 동적 `공격 역할`/`방어 역할`/`회복 역할` 노드만 `TrumpGothic 23`에서 `AXIS 12`로 변경합니다. widget/node ID, 위치, 크기, TextId, 정렬, 플래그, 간격이 예상값과 모두 일치할 때만 각 파일의 네 폰트 바이트를 수정하며, 두 파일 중 하나라도 구조가 달라지면 두 파일 모두 이 보정을 건너뜁니다. 같은 탭의 직업명 노드는 원래 `Jupiter 23`과 180x34 영역을 유지합니다.
+- 위 두 보정과 소지품 창 부제 간격 보정(`Inventory`·`InventoryLarge`·`InventoryExpansion`)은 게임 업데이트로 창 구조가 바뀌면 검증에 실패할 수 있습니다. 이때는 그 보정 묶음의 ULD를 모두 글로벌 원본으로 두고 `Warnings:`에 이유를 남긴 뒤, 텍스트·폰트·나머지 UI 패치는 계속 생성합니다. 한 묶음 안에서 일부 파일만 바뀌지는 않습니다. `PatchRouteVerifier`는 건너뛴 ULD를 필수 UI 경로 누락으로 보고합니다. 회귀 테스트는 `Scripts\test-optional-uld-patch.ps1`입니다.
 - `ScreenImage` 언어별 이미지: `exd/screenimage.exh`와 `screenimage_*.exd`에서 `Lang` 플래그가 켜진 이미지 ID를 읽고, 글로벌 대상 언어 폴더(`ja` 또는 `en`)의 `ui/icon/...` 파일을 한국 서버 `ko` 이미지로 교체합니다.
 - `CutScreenImage` 언어별 이미지: 지역 이동, 던전/컨텐츠 진입, 컷신 전환에서 쓰이는 타이틀 이미지 ID를 읽어 같은 방식으로 한국 서버 `ko` 이미지를 복사합니다.
 - `TerritoryType` 언어별 이미지: 필드 지역 진입 시 표시되는 지역 타이틀 이미지 ID를 읽어, 저지/중부 라노시아처럼 `PlaceName` 문자열과 별도로 렌더링되는 이미지형 지역명을 한국 서버 `ko` 이미지로 보정합니다. 지역명 아래에 표시되는 `+2000` 계열 부제 이미지도 함께 복사합니다.
