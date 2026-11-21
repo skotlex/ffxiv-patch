@@ -89,7 +89,9 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             new LobbyHangulCoverageRowSpec("ClassJob", 0, 43),
             new LobbyHangulCoverageRowSpec("Race", 1, 8),
             new LobbyHangulCoverageRowSpec("Tribe", 1, 16),
-            new LobbyHangulCoverageRowSpec("GuardianDeity", 1, 12, 0)
+            new LobbyHangulCoverageRowSpec("GuardianDeity", 1, 12, 0),
+            // 캐릭터 선택 생일의 달 이름(별빛1월~그림자6월). 없으면 '별빛'의 '빛'이 큰 라벨에서 '-'로 보인다.
+            new LobbyHangulCoverageRowSpec("Lobby", 40, 51, 0)
         };
 
         public static bool IsTargetFontPath(string path)

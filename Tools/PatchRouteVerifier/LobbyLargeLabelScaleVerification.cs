@@ -12,6 +12,7 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 new LobbyLargeLabelScaleCase("character-race-gender-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "로스가르 여", "ロスガル"),
                 new LobbyLargeLabelScaleCase("character-tribe-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "떠도는 별", "ロスト"),
                 new LobbyLargeLabelScaleCase("character-birthday-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "그림자 5월 11일", "霊5月11日"),
+                new LobbyLargeLabelScaleCase("character-birthday-astral-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "별빛 1월 1일", "星1月1日"),
                 new LobbyLargeLabelScaleCase("character-deity-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "니메이아", "ニメーヤ"),
                 new LobbyLargeLabelScaleCase("character-class-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "레벨 100 암흑기사", "レベル100暗黒騎士"),
                 new LobbyLargeLabelScaleCase("character-location-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "지고천 거리", "ジゴテン街"),
@@ -19,6 +20,7 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 new LobbyLargeLabelScaleCase("character-race-gender-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "로스가르 여", "ロスガル"),
                 new LobbyLargeLabelScaleCase("character-tribe-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "떠도는 별", "ロスト"),
                 new LobbyLargeLabelScaleCase("character-birthday-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "그림자 5월 11일", "霊5月11日"),
+                new LobbyLargeLabelScaleCase("character-birthday-astral-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "별빛 1월 1일", "星1月1日"),
                 new LobbyLargeLabelScaleCase("character-deity-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "니메이아", "ニメーヤ"),
                 new LobbyLargeLabelScaleCase("character-class-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "레벨 100 암흑기사", "レベル100暗黒騎士"),
                 new LobbyLargeLabelScaleCase("character-location-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "지고천 거리", "ジゴテン街")
