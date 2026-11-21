@@ -68,6 +68,12 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             ExpectUnpatchedForm("index and index2 are not compared with each other",
                 Index("mixed-a", false, Entry(1, 0, 0x800)), Index("mixed-b", true, Entry(1, 0, 0x800)), false);
 
+            // 생성기가 텍스트·폰트·UI 기준 index 에 쓰는 중단 검사.
+            ExpectRequire("require: matching base index passes",
+                Index("require-ok", false, Entry(1, 0, 0x800), Entry(2, 0, 0x900)), false);
+            ExpectRequire("require: base index from another game version stops the build",
+                Index("require-freed", true, Entry(1, 0, 0x800), Entry(2, 0, 0xA00)), true);
+
             Console.WriteLine("{0} passed, {1} failed", _passed, _failures);
             return _failures == 0 ? 0 : 1;
         }
@@ -77,6 +83,24 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             SqPackIndexCheck.DatRecordReport report = SqPackIndexCheck.FindEntriesWithoutDatRecords(indexPath, _dir, "game");
             Check(name, report.Missing == expected && report.Entries == 2,
                 "missing " + report.Missing + " of " + report.Entries + " (" + report.FirstMissing + ")");
+        }
+
+        private static void ExpectRequire(string name, string indexPath, bool expectThrow)
+        {
+            string message = null;
+            try
+            {
+                SqPackIndexCheck.RequireEntriesHaveDatRecords(indexPath, _dir, "game");
+            }
+            catch (InvalidOperationException ex)
+            {
+                message = ex.Message;
+            }
+
+            bool ok = expectThrow
+                ? message != null && message.Contains("1 of 2 entries") && message.Contains("game.dat0 offset 0xA00")
+                : message == null;
+            Check(name, ok, message ?? "no exception");
         }
 
         private static void ExpectUnpatchedForm(string name, string candidate, string installed, bool expected)

@@ -3357,9 +3357,25 @@ namespace FFXIVKoreanPatch.Main
             }
         }
 
-        // A 0a0000 index left from another game version sends the sheets that version changed to freed
-        // or reused dat records; the client then loads the wrong EXD rows and can crash. Only the
-        // launcher's file repair brings the matching index back.
+        // 텍스트(0a0000)·폰트(000000)·UI(060000) index 를 모두 검사한다. 060000 은 항목이 약 24만 개라
+        // SSD 에서 처음 1회 수 초가 걸린다 (7.58 clean 사본 실측: index 7초, 캐시 후 1초).
+        private void AddPreflightIndexDatStatus(List<string> lines, ref int failures, ref int warnings)
+        {
+            string[] indexFileNames = new string[]
+            {
+                "0a0000.win32.index", "0a0000.win32.index2",
+                "000000.win32.index", "000000.win32.index2",
+                "060000.win32.index", "060000.win32.index2"
+            };
+            for (int i = 0; i < indexFileNames.Length; i++)
+            {
+                AddPreflightIndexDatStatus(lines, ref failures, ref warnings, indexFileNames[i]);
+            }
+        }
+
+        // An index left from another game version sends the files that version changed to freed or
+        // reused dat records; the client then loads the wrong data (EXD rows, fonts, UI) and can crash.
+        // Only the launcher's file repair brings the matching index back.
         private void AddPreflightIndexDatStatus(List<string> lines, ref int failures, ref int warnings, string indexFileName)
         {
             string sqpackDir = GetTargetSqpackDir();
@@ -3371,8 +3387,10 @@ namespace FFXIVKoreanPatch.Main
 
             try
             {
+                // "060000.win32.index2" -> "060000.win32"
+                string datPrefix = indexFileName.Substring(0, indexFileName.LastIndexOf(".index", StringComparison.OrdinalIgnoreCase));
                 SqPackIndexCheck.DatRecordReport report =
-                    SqPackIndexCheck.FindEntriesWithoutDatRecords(indexPath, sqpackDir, "0a0000.win32");
+                    SqPackIndexCheck.FindEntriesWithoutDatRecords(indexPath, sqpackDir, datPrefix);
                 if (report.Missing == 0)
                 {
                     lines.Add("[OK] 글로벌 " + indexFileName + " 항목이 dat 파일과 일치합니다.");
@@ -3542,8 +3560,7 @@ namespace FFXIVKoreanPatch.Main
                     AddPreflightIndexStatus(lines, ref failures, ref warnings, "000000.win32.index2");
                     AddPreflightIndexStatus(lines, ref failures, ref warnings, "060000.win32.index");
                     AddPreflightIndexStatus(lines, ref failures, ref warnings, "060000.win32.index2");
-                    AddPreflightIndexDatStatus(lines, ref failures, ref warnings, "0a0000.win32.index");
-                    AddPreflightIndexDatStatus(lines, ref failures, ref warnings, "0a0000.win32.index2");
+                    AddPreflightIndexDatStatus(lines, ref failures, ref warnings);
 
                     if (HasPatchedTargetIndexes())
                     {
@@ -4632,8 +4649,7 @@ namespace FFXIVKoreanPatch.Main
                     List<string> indexDatLines = new List<string>();
                     int indexDatFailures = 0;
                     int indexDatWarnings = 0;
-                    AddPreflightIndexDatStatus(indexDatLines, ref indexDatFailures, ref indexDatWarnings, "0a0000.win32.index");
-                    AddPreflightIndexDatStatus(indexDatLines, ref indexDatFailures, ref indexDatWarnings, "0a0000.win32.index2");
+                    AddPreflightIndexDatStatus(indexDatLines, ref indexDatFailures, ref indexDatWarnings);
                     logLines.AddRange(indexDatLines);
                     bool canPatchImmediately = TryUnlockPatchAfterRestore(logLines, indexDatFailures == 0 && indexDatWarnings == 0);
                     string localRestoreLogPath = WriteOperationLog("remove-local-restore", logLines);
@@ -4655,7 +4671,7 @@ namespace FFXIVKoreanPatch.Main
                     resultDetails.Add(new KeyValuePair<string, string>(
                         "다음 패치",
                         canPatchImmediately ? "사전 점검 없이 바로 실행 가능"
-                            : indexDatFailures > 0 ? "런처 파일 검사/복구 필요 (복구한 0a0000 index가 현재 게임 버전의 것이 아님)"
+                            : indexDatFailures > 0 ? "런처 파일 검사/복구 필요 (복구한 index가 현재 게임 버전의 것이 아님)"
                             : "사전 점검 후 실행 필요"));
 
                     ShowOperationResultDialog(

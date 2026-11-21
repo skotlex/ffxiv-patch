@@ -290,6 +290,8 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             string currentGlobalIndex2 = Path.Combine(globalSqpack, Index2FileName);
             string originalGlobalIndex2 = Path.Combine(globalSqpack, OrigIndex2FileName);
             string baseIndex2 = ResolveBaseIndex2(currentGlobalIndex2, originalGlobalIndex2);
+            SqPackIndexCheck.RequireEntriesHaveDatRecords(baseIndex, globalSqpack, "000000.win32");
+            SqPackIndexCheck.RequireEntriesHaveDatRecords(baseIndex2, globalSqpack, "000000.win32");
 
             string outputIndex = Path.Combine(outputDir, IndexFileName);
             string outputIndex2 = Path.Combine(outputDir, Index2FileName);

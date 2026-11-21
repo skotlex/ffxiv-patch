@@ -75,6 +75,23 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             return report;
         }
 
+        // 패치의 기준 index 가 같은 폴더의 dat 와 맞지 않으면(다른 게임 버전에서 저장한 index) 중단한다.
+        // 출력 index 는 기준 index 의 사본이라, 맞지 않는 항목이 그대로 설치되기 때문이다.
+        public static void RequireEntriesHaveDatRecords(string indexPath, string sqpackDir, string datPrefix)
+        {
+            DatRecordReport report = FindEntriesWithoutDatRecords(indexPath, sqpackDir, datPrefix);
+            if (report.Missing == 0)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                "The selected base " + Path.GetFileName(indexPath) + " does not match the global client's dat files: " +
+                report.Missing + " of " + report.Entries + " entries do not point at a file record (first: " +
+                report.FirstMissing + "). The index was saved from another game version. " +
+                "Restore the current index with the launcher's file repair, then build again.");
+        }
+
         // True when candidate is the installed index without its patch redirects: every entry the
         // installed index keeps in a game dat is identical, and candidate has no other entries.
         // Entries the installed index points at patchDatId are ignored (a patch may also add them).

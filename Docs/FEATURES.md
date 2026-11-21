@@ -58,7 +58,7 @@
 - `0a0000.win32.index/index2` 상태 확인
 - `000000.win32.index/index2` 상태 확인
 - dat1 참조 여부 확인
-- 설치된 `0a0000.win32.index/index2` 항목이 dat 파일의 실제 파일 레코드를 가리키는지 확인. 다른 게임 버전의 index면 실패로 처리하고 런처 파일 검사/복구 안내
+- 설치된 `0a0000`·`000000`·`060000` index/index2 항목이 dat 파일의 실제 파일 레코드를 가리키는지 확인. 다른 게임 버전의 index면 실패로 처리하고 런처 파일 검사/복구 안내
 - clean/original index 복구 기준 생성 또는 발견
 - 릴리즈 빌드에서 한글 채팅용 Scancode Map 레지스트리 확인 및 설치
 - 사전 점검 결과를 본문의 펼침 영역에 표시
@@ -248,7 +248,7 @@
   - 데이터센터 row, 좁은 시간 단위, 숫자 glyph, 파티 리스트 본인 번호 glyph 확인
   - 로비/대사 문장 한글 glyph를 PNG와 `glyph-report.tsv`로 덤프해 특정 글자의 atlas 잔픽셀/겹침 여부 확인
 - unsafe sheet 스킵
-- 기준 `0a0000` index/index2의 모든 항목이 글로벌 dat 파일의 실제 파일 레코드를 가리키는지 확인하고, 아니면 생성 중단. 회귀 테스트: `Scripts\test-index-check.ps1`
+- 텍스트·폰트·UI 기준 index/index2(`0a0000`·`000000`·`060000`)의 모든 항목이 글로벌 dat 파일의 실제 파일 레코드를 가리키는지 확인하고, 아니면 생성 중단. 회귀 테스트: `Scripts\test-index-check.ps1`
 - 새 `0a0000.win32.dat1` 생성
 - 수정된 `0a0000.win32.index` 생성
 - 수정된 `0a0000.win32.index2` 생성
