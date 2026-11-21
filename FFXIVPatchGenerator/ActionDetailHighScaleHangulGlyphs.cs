@@ -6,7 +6,10 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
     {
         public const string SourceFontPath = "common/font/TrumpGothic_34.fdt";
         public const string TargetFontPath = "common/font/TrumpGothic_68.fdt";
-        public const double LargeUiHangulToDigitRatio = 0.88d;
+        // 인게임 TrumpGothic_23/34/68 한글 높이 = 숫자 높이 x 이 값. 0.88 일 때 TrumpGothic_23 창 제목 한글은
+        // 약 16.4px 로 주변보다 커 보였다(2026-11-21 사용자 보고). 0.80 은 약 14.9px 로, Jupiter_20 탭(13.9px)보다
+        // 조금 크게 남는다. 0.73 은 탭보다 작아져 쓰지 않았다. UI 배율마다 제목 글꼴이 23 -> 34 -> 68 로 바뀌므로 세 글꼴에 같이 쓴다.
+        public const double LargeUiHangulToDigitRatio = 0.80d;
 
         public const string InstantCastPhrase = "\uC989\uC2DC \uBC1C\uB3D9";
         public const string CastTimePhrase = "\uC2DC\uC804 \uC2DC\uAC04";

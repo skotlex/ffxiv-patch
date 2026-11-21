@@ -55,10 +55,11 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
             private static readonly string ActionDetailLongTimerPhrase = "120.00\uCD08";
             private static readonly string ActionDetailShortTimerPhrase = "1.50\uCD08";
             private const string ActionDetailNumericBaselinePhrase = "120.00";
-            // Preserve relative size tolerances for the 0.88 target (previously 0.98).
+            // Preserve relative size tolerances for the generator target (previously 0.98, then 0.88).
             // Short syllables remain shorter than digits; tier and baseline checks are independent.
-            private const double VisualScalePhraseMinRatio = 0.85d * 0.88d / 0.98d;
-            private const double VisualScalePhraseMaxRatio = 1.19d * 0.88d / 0.98d;
+            // 목표 비율(LargeUiHangulToDigitRatio)을 바꾸면 허용 범위도 같은 비율로 따라간다.
+            private const double VisualScalePhraseMinRatio = 0.85d * ActionDetailHighScaleHangulGlyphs.LargeUiHangulToDigitRatio / 0.98d;
+            private const double VisualScalePhraseMaxRatio = 1.19d * ActionDetailHighScaleHangulGlyphs.LargeUiHangulToDigitRatio / 0.98d;
             private const double VisualScalePairMinRelativeRatio = 0.88d;
             private const double VisualScalePairMaxRelativeRatio = 1.12d;
             // Individual short syllables (e.g. U+ACE0/U+D06C) need more headroom than phrase averages.
