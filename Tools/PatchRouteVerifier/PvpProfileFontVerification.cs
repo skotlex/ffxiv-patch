@@ -21,7 +21,9 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
 
             private const double PvpReferenceMinRatio = 0.86d;
             private const double PvpReferenceMaxRatio = 1.18d;
-            private const double PvpNumericMinRatio = 1.10d;
+            // Jupiter_20 한글이 본문(AXIS_14) 셀을 쓰면서 'PvP 프로필' 의 한글/숫자 높이 비율이 1.045 가 된다.
+            // 1.10 은 예전 Jupiter_16 셀(17.9px) 기준이었다.
+            private const double PvpNumericMinRatio = 1.00d;
             private const double PvpNumericMaxRatio = 1.55d;
             private const double PvpSourcePreserveMinRatio = 0.96d;
             private const double PvpSourcePreserveMaxRatio = 1.04d;

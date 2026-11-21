@@ -2218,6 +2218,24 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                 return 0;
             }
 
+            int baselineShift = 0;
+            if (SharedUi100PercentHangulGlyphs.AlignsBaselineToTargetDigits(normalizedPath))
+            {
+                if (!TryMeasureHangulToDigitBaselineShift(targetFdt, normalizedPath, sourceFdt, sourceFontPath, payloadsByPath, mpdStream, out baselineShift))
+                {
+                    AddLimitedWarning("Shared UI Hangul baseline could not be measured; source offsets kept: " + normalizedPath);
+                    baselineShift = 0;
+                }
+                else
+                {
+                    Console.WriteLine(
+                        "  Shared UI Hangul baseline shift: {0} ({1} -> {2})",
+                        baselineShift,
+                        sourceFontPath,
+                        normalizedPath);
+                }
+            }
+
             int changed = 0;
             int missingSources = 0;
             int invalidTextureRoutes = 0;
@@ -2251,10 +2269,20 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
                     continue;
                 }
 
+                byte[] routedEntryBytes = sourceEntryBytes;
+                if (baselineShift != 0)
+                {
+                    routedEntryBytes = (byte[])sourceEntryBytes.Clone();
+                    routedEntryBytes[15] = unchecked((byte)(sbyte)ClampInt(
+                        unchecked((sbyte)sourceEntryBytes[15]) + baselineShift,
+                        sbyte.MinValue,
+                        sbyte.MaxValue));
+                }
+
                 bool differs = false;
                 for (int fieldOffset = 6; fieldOffset < FdtGlyphEntrySize; fieldOffset++)
                 {
-                    if (targetFdt[targetOffset + fieldOffset] != sourceEntryBytes[fieldOffset])
+                    if (targetFdt[targetOffset + fieldOffset] != routedEntryBytes[fieldOffset])
                     {
                         differs = true;
                         break;
@@ -2268,7 +2296,7 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
 
                 // Preserve the target lookup keys and line/kerning tables. Only
                 // reuse the already-loaded source glyph's cell and metrics.
-                Buffer.BlockCopy(sourceEntryBytes, 6, targetFdt, targetOffset + 6, FdtGlyphEntrySize - 6);
+                Buffer.BlockCopy(routedEntryBytes, 6, targetFdt, targetOffset + 6, FdtGlyphEntrySize - 6);
                 changed++;
             }
 
@@ -2287,6 +2315,51 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
             }
 
             return changed;
+        }
+
+        // 원본 글꼴(폰트 묶음)의 한글 잉크 아랫선을 대상 글꼴의 숫자 잉크 아랫선에 맞추는 offsetY 이동량을 구한다.
+        // 로비 큰 라벨과 같은 기준이다. 원본 글꼴의 숫자 아랫선을 쓰면 AXIS 한글이 숫자보다 약 3px 아래까지
+        // 내려와 그만큼 지나치게 내려간다. 인게임 Jupiter 숫자는 clean 이 아니라 폰트 묶음의 숫자가 그대로
+        // 출력되므로, 지금 패치하는 FDT 의 숫자를 잰다.
+        private static readonly uint[] BaselineSampleHangulCodepoints = CreatePhraseCodepointArray(new string[]
+        {
+            "가나다라마바사아자차카타파하",
+            "새 소식 부대원 계급 기술 역할 특성 사무라이"
+        });
+
+        // 기준선 위에 놓이는 숫자만 쓴다. Jupiter 는 3·4·5·7·9 가 기준선 아래로 내려가는 숫자라
+        // 0~9 평균을 쓰면 기준선이 2~3px 낮게 잡힌다.
+        private static readonly uint[] BaselineDigitCodepoints = new uint[] { '0', '1', '2', '6', '8' };
+
+        private static bool TryMeasureHangulToDigitBaselineShift(
+            byte[] targetFdt,
+            string targetFontPath,
+            byte[] sourceFdt,
+            string sourceFontPath,
+            Dictionary<string, FontPayload> payloadsByPath,
+            FileStream mpdStream,
+            out int shift)
+        {
+            shift = 0;
+            FontVisibleMetrics targetDigits = MeasureVisibleMetricsFromTtmpPayloads(
+                targetFdt,
+                targetFontPath,
+                BaselineDigitCodepoints,
+                payloadsByPath,
+                mpdStream);
+            FontVisibleMetrics sourceHangul = MeasureVisibleMetricsFromTtmpPayloads(
+                sourceFdt,
+                sourceFontPath,
+                BaselineSampleHangulCodepoints,
+                payloadsByPath,
+                mpdStream);
+            if (targetDigits.MeanHeight <= 0d || sourceHangul.MeanHeight <= 0d)
+            {
+                return false;
+            }
+
+            shift = ClampInt((int)Math.Round(targetDigits.MeanBottom - sourceHangul.MeanBottom), sbyte.MinValue, sbyte.MaxValue);
+            return true;
         }
 
         private static bool TryGetLargeUiLabelVisualScaleSpec(string path, out LargeUiLabelVisualScaleSpec spec)

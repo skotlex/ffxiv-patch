@@ -9,7 +9,9 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
         private sealed partial class Verifier
         {
             private const double SharedUiMaxRelativeGlyphScaleSpread = 1.25d;
-            private const double SharedUiMinHangulToDigitRatio = 1.10d;
+            // Jupiter_20 한글은 본문(AXIS_14) 셀을 쓰므로 짧은 문구에서 한글이 Jupiter 숫자와 거의 같은 높이가 된다
+            // ('PvP 프로필' 1.045). 1.10 은 예전 Jupiter_16 셀(17.9px) 기준이었다.
+            private const double SharedUiMinHangulToDigitRatio = 1.00d;
             private const double SharedUiMaxHangulToDigitRatio = 1.55d;
 
             private static readonly string[] SharedJupiterFontPaths =
@@ -126,6 +128,8 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                         routedGroups,
                         SharedUiRouteGroups.Length);
                 }
+
+                VerifySharedJupiterDigitBaselines();
 
                 int expectedMappedGlyphs;
                 int mappedProbeGlyphs;
@@ -267,6 +271,9 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                     Dictionary<uint, FdtGlyphEntry> originalTargetGlyphs = ReadHangulGlyphEntries(originalTargetFdt);
                     Dictionary<uint, FdtGlyphEntry> targetGlyphs = ReadHangulGlyphEntries(targetFdt);
                     int failuresForFont = 0;
+                    // 기준선을 맞추는 경로는 원본 셀·크기를 그대로 쓰고 offsetY 만 글꼴 전체에서 같은 값만큼 옮긴다.
+                    bool alignsBaseline = SharedUi100PercentHangulGlyphs.AlignsBaselineToTargetDigits(fontPath);
+                    int? baselineShift = null;
                     foreach (KeyValuePair<uint, FdtGlyphEntry> pair in originalTargetGlyphs)
                     {
                         uint codepoint = pair.Key;
@@ -300,8 +307,23 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                             continue;
                         }
 
+                        FdtGlyphEntry comparedSource = sourceGlyph;
+                        if (alignsBaseline)
+                        {
+                            int delta = targetGlyph.OffsetY - sourceGlyph.OffsetY;
+                            if (!baselineShift.HasValue)
+                            {
+                                baselineShift = delta;
+                            }
+
+                            if (delta == baselineShift.Value)
+                            {
+                                comparedSource.OffsetY = targetGlyph.OffsetY;
+                            }
+                        }
+
                         bool routeMatches =
-                            GlyphSpacingMetricsMatch(sourceGlyph, targetGlyph) &&
+                            GlyphSpacingMetricsMatch(comparedSource, targetGlyph) &&
                             sourceGlyph.ImageIndex == targetGlyph.ImageIndex &&
                             sourceGlyph.X == targetGlyph.X &&
                             sourceGlyph.Y == targetGlyph.Y;
@@ -342,6 +364,13 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                         {
                             sourceCanvas = RenderGlyph(_ttmpFont, sourceFontPath, codepoint);
                             targetCanvas = RenderGlyph(_patchedFont, fontPath, codepoint);
+                            if (alignsBaseline && sourceCanvas.Glyph.OffsetY != targetCanvas.Glyph.OffsetY)
+                            {
+                                // 세로 위치만 옮긴 경로는 원본을 같은 offsetY 로 그려 모양만 비교한다.
+                                FdtGlyphEntry shiftedSource = sourceCanvas.Glyph;
+                                shiftedSource.OffsetY = targetCanvas.Glyph.OffsetY;
+                                sourceCanvas.Alpha = RenderGlyphAlpha(ReadFontTexture(_ttmpFont, sourceCanvas.TexturePath), shiftedSource);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -373,6 +402,48 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 }
 
                 return mapped;
+            }
+
+            // 기준선을 맞추는 Jupiter 경로: 한글(원본 AXIS 셀)과 Jupiter 숫자의 아랫선이 같은 줄에서 맞아야 한다.
+            // 예: 기술 목록·캐릭터 창의 '레벨 100 사무라이' 줄, 자유부대 탭.
+            private void VerifySharedJupiterDigitBaselines()
+            {
+                const string phrase = "부대원 100 사무라이";
+                for (int i = 0; i < SharedJupiterFontPaths.Length; i++)
+                {
+                    string fontPath = SharedJupiterFontPaths[i];
+                    if (!SharedUi100PercentHangulGlyphs.AlignsBaselineToTargetDigits(fontPath))
+                    {
+                        continue;
+                    }
+
+                    PhraseVisualBounds bounds;
+                    string error;
+                    if (!TryMeasurePhraseVisualBounds(_patchedFont, fontPath, phrase, true, out bounds, out error))
+                    {
+                        Fail("{0} shared Jupiter baseline phrase [{1}] layout error: {2}", fontPath, Escape(phrase), error);
+                        continue;
+                    }
+
+                    double gap = bounds.MeanDigitBottom - bounds.MeanHangulBottom;
+                    if (bounds.MeanDigitHeight <= 0d || bounds.MeanHangulHeight <= 0d || Math.Abs(gap) > 2.0d)
+                    {
+                        Fail(
+                            "{0} shared Jupiter Hangul bottom {1} and digit bottom {2} differ by {3}px (max 2)",
+                            fontPath,
+                            FormatDouble(bounds.MeanHangulBottom),
+                            FormatDouble(bounds.MeanDigitBottom),
+                            FormatDouble(gap));
+                        continue;
+                    }
+
+                    Pass(
+                        "{0} shared Jupiter Hangul/digit bottoms aligned: {1} / {2}, Hangul/digit height {3}",
+                        fontPath,
+                        FormatDouble(bounds.MeanHangulBottom),
+                        FormatDouble(bounds.MeanDigitBottom),
+                        FormatRatio(SafeRatio(bounds.MeanHangulHeight, bounds.MeanDigitHeight)));
+                }
             }
 
             private int VerifySharedUiGroupGlyphScale(
