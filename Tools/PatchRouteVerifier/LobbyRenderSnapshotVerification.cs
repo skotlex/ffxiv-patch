@@ -33,6 +33,9 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 new LobbyRenderCase("settings-axis36-result", "common/font/AXIS_36_lobby.fdt", SettingsChangedPhrase, 1.0),
                 new LobbyRenderCase("chara-location-axis18", "common/font/AXIS_18_lobby.fdt", CharacterLocationPhrase, 1.0),
                 new LobbyRenderCase("chara-location-axis36", "common/font/AXIS_36_lobby.fdt", CharacterLocationPhrase, 1.0),
+                // 같은 정보 창의 큰 라벨(UI 100%). 한글과 숫자(TrumpGothic 원본)가 한 줄에 섞인다.
+                new LobbyRenderCase("chara-class-trump34", "common/font/TrumpGothic_34_lobby.fdt", "레벨 100 사무라이", 1.0),
+                new LobbyRenderCase("chara-race-trump34", "common/font/TrumpGothic_34_lobby.fdt", "라라펠 여", 1.0),
                 new LobbyRenderCase("settings-global-axis18-result", "common/font/AXIS_18.fdt", SettingsChangedPhrase, 1.0, true),
                 new LobbyRenderCase("settings-global-axis36-result", "common/font/AXIS_36.fdt", SettingsChangedPhrase, 1.0, true),
                 new LobbyRenderCase("settings-global-krnaxis180-result", "common/font/KrnAXIS_180.fdt", SettingsChangedPhrase, 1.0, true),

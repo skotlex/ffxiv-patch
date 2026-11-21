@@ -188,12 +188,11 @@ namespace FfxivKoreanPatch.FFXIVPatchGenerator
         private static readonly LobbyLargeLabelVisualScaleSpec[] LobbyLargeLabelVisualScaleFonts = new LobbyLargeLabelVisualScaleSpec[]
         {
             new LobbyLargeLabelVisualScaleSpec("common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", 1.08d, 1.08d),
-            // 0.85: at 150%+ UI scale the lobby title/labels render this font
-            // natively while the base language falls back to scaled AXIS text
-            // (~1.5 x 14.4px). A 1.00 ratio made the Korean title ~1.5x the
-            // base-language visual height and it overran the adjacent
-            // auxiliary text (2026-06-13 live report).
-            new LobbyLargeLabelVisualScaleSpec("common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", 0.85d, 0.80d)
+            // 캐릭터 선택 정보 창의 큰 라벨(종족·부족·생일·수호신·직업)은 UI 100% 에서 이 글꼴로 그려진다.
+            // 예전 원본(TrumpGothic_34.fdt 한글 x0.80)은 약 28px 로, 같은 창의 현재 위치 줄(AXIS_18_lobby,
+            // 18px)보다 1.5배 컸다(2026-11-21 사용자 화면). 한국 클라이언트는 이 글꼴에 한글이 없고
+            // KrnAXIS 로 대체해 그리므로, 현재 위치 줄과 같은 AXIS_18_lobby 한글을 1.0 배로 쓴다.
+            new LobbyLargeLabelVisualScaleSpec("common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", 1.0d, 1.0d)
         };
 
         private static readonly string[] LobbyLargeLabelCleanReferencePhrases = new string[]

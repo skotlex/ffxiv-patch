@@ -183,6 +183,7 @@ clean/산출물별로 폰트당 사용 페이지, 패치 한글 페이지, 예�
   내리고, verifier `lobby-large-label-scale-layouts`에
   `start-system-config-title-34` 케이스를 추가, TG_34 픽셀 높이 상한을
   30.5px로 강화해 이전 과대 상태(30.6~35px)를 거부한다.
+- 2026-11-21 변경: TG_34_lobby는 이제 AXIS_18_lobby 한글을 1.0배로 쓴다(약 18px). UI 100% 캐릭터 선택 정보 창의 큰 라벨이 같은 창의 현재 위치 줄(AXIS_18_lobby, 18px)보다 1.5배 크다는 사용자 보고에 따른 것이다. 검증기 픽셀 범위도 16.0..21.0px로 바꿨다. AXIS_18_lobby 한글 셀을 같이 쓰므로 `font_lobby2.tex`에 새로 쓰는 셀이 1,335→1,156개로 줄었다.
 
 ### PvP 프로필 폰트 (fixes 브랜치 포팅)
 

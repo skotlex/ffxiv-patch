@@ -16,14 +16,14 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 new LobbyLargeLabelScaleCase("character-deity-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "니메이아", "ニメーヤ"),
                 new LobbyLargeLabelScaleCase("character-class-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "레벨 100 암흑기사", "レベル100暗黒騎士"),
                 new LobbyLargeLabelScaleCase("character-location-23", "common/font/TrumpGothic_23_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "지고천 거리", "ジゴテン街"),
-                new LobbyLargeLabelScaleCase("start-system-config-title-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "시스템 설정", "システムコンフィグ"),
-                new LobbyLargeLabelScaleCase("character-race-gender-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "로스가르 여", "ロスガル"),
-                new LobbyLargeLabelScaleCase("character-tribe-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "떠도는 별", "ロスト"),
-                new LobbyLargeLabelScaleCase("character-birthday-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "그림자 5월 11일", "霊5月11日"),
-                new LobbyLargeLabelScaleCase("character-birthday-astral-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "별빛 1월 1일", "星1月1日"),
-                new LobbyLargeLabelScaleCase("character-deity-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "니메이아", "ニメーヤ"),
-                new LobbyLargeLabelScaleCase("character-class-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "레벨 100 암흑기사", "レベル100暗黒騎士"),
-                new LobbyLargeLabelScaleCase("character-location-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/TrumpGothic_34.fdt", "지고천 거리", "ジゴテン街")
+                new LobbyLargeLabelScaleCase("start-system-config-title-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "시스템 설정", "システムコンフィグ"),
+                new LobbyLargeLabelScaleCase("character-race-gender-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "로스가르 여", "ロスガル"),
+                new LobbyLargeLabelScaleCase("character-tribe-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "떠도는 별", "ロスト"),
+                new LobbyLargeLabelScaleCase("character-birthday-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "그림자 5월 11일", "霊5月11日"),
+                new LobbyLargeLabelScaleCase("character-birthday-astral-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "별빛 1월 1일", "星1月1日"),
+                new LobbyLargeLabelScaleCase("character-deity-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "니메이아", "ニメーヤ"),
+                new LobbyLargeLabelScaleCase("character-class-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "레벨 100 암흑기사", "レベル100暗黒騎士"),
+                new LobbyLargeLabelScaleCase("character-location-34", "common/font/TrumpGothic_34_lobby.fdt", "common/font/AXIS_18_lobby.fdt", "지고천 거리", "ジゴテン街")
             };
 
             private void VerifyLobbyLargeLabelScaleLayouts()
@@ -128,11 +128,9 @@ namespace FfxivKoreanPatch.PatchRouteVerifier
                 string normalized = (fontPath ?? string.Empty).Replace('\\', '/');
                 if (string.Equals(normalized, "common/font/TrumpGothic_34_lobby.fdt", StringComparison.OrdinalIgnoreCase))
                 {
-                    // The 150%+ lobby renders this font natively while the base
-                    // language shows ~1.5x-scaled AXIS_18_lobby text (~21.6px).
-                    // The pixel ceiling rejects the oversized state (30.6-35px)
-                    // that overran the auxiliary text next to the title.
-                    return new LobbyLargeLabelScaleExpectation(0.85d, 1.06d, 0.85d, 24.0d, 30.5d, 1.40d, 2.20d);
+                    // 캐릭터 선택 큰 라벨은 같은 창의 현재 위치 줄(AXIS_18_lobby 한글, 18px)과 같은 크기여야 한다.
+                    // 예전 크기(약 28px, TrumpGothic_34.fdt 한글 x0.80)는 픽셀 상한으로 거부한다.
+                    return new LobbyLargeLabelScaleExpectation(0.96d, 1.06d, 0.96d, 16.0d, 21.0d, 0.82d, 1.80d);
                 }
 
                 return new LobbyLargeLabelScaleExpectation(1.04d, 1.16d, 1.02d, 17.0d, 24.0d, 0.82d, 1.80d);
